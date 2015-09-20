@@ -1,5 +1,2 @@
 #ignore Debug folder
 Debug/
-
-#file to ignore
-*.opensdf
