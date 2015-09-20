@@ -1,0 +1,7 @@
+This is Haifang Chen and James Du assignment 2.
+
+The camera motion in the demo was implemented. The camera is prevented from crossing the pole when rotating along the longitudinal lines.
+
+The vertices and normals are displayed after being read in by meshReader().
+
+All of the functionality specified by the assignment are implemented.
