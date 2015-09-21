@@ -1,16 +1,8 @@
 // EECS366 Assignment 2 
 //James Du, Haifeng Chen
 
-#define _CRT_SECURE_NO_DEPRECATE
-#include <stdio.h>
-#include <stdlib.h>
-#include <GL\glut.h>
-#include <math.h>
-#include <iostream>
+#include "as3.h"
 
-typedef float Matrix4x4[4][4];
-#define ON 1
-#define OFF 0
 
 
 // Global variables
@@ -26,17 +18,7 @@ float eyeX, eyeY, eyeZ;
 int oldX, oldY;
 int rotate, zoom;
 Matrix4x4 currentMatrix;
-// Vertex and Face data structure sued in the mesh reader
-// Feel free to change them
 
-typedef struct _point {
-	float x, y, z;
-} point;
-
-typedef struct _faceStruct {
-	int v1, v2, v3;
-	int n1, n2, n3;
-} faceStruct;
 
 int verts, faces, norms;    // Number of vertices, faces and normals in the system
 point *vertList, *normList; // Vertex and Normal Lists
@@ -190,10 +172,19 @@ void	display(void)
 	}
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-
-	glPushMatrix();
+	drawObject();
+//	glPushMatrix();
 	glRotatef(degrees, 0.0, 0.0, 1);
+	drawAxis();
+//	glPopMatrix();
+
+	// (Note that the origin is lower left corner)
+	// (Note also that the window spans (0,1) )
+	// Finish drawing, update the frame buffer, and swap buffers
+	glutSwapBuffers();
+}
+
+void drawObject() {
 	if (OBJECT_ON) {
 		glColor3f(1, 0, 0);
 		glBegin(GL_TRIANGLES);
@@ -209,38 +200,8 @@ void	display(void)
 		}
 		glEnd();
 	}
-
-
-	//   //draw a red rectangle
-	//   glColor3f(1,0,0);
-	//glBegin(GL_POLYGON);
-	//	glVertex3f(0.8,0.8,-0.8);
-	//	glVertex3f(0.8,-0.8,-0.8);
-	//	glVertex3f(-0.8,-0.8,-0.0);
-	//	glVertex3f(-0.8,0.8,-0.0);
-	//   glEnd();
-
-	// Draw a blue tetraheadron
-	/*
-	glColor3f(0, 0, 1);
-	glBegin(GL_TRIANGLES);
-	glVertex3f(0.0, 1.6, 0.0);
-	glVertex3f(0.8, -0.4, 0.8);
-	glVertex3f(-0.8, -0.4, 0.8);
-
-	glVertex3f(0.0, 1.6, 0.0);
-	glVertex3f(0.8, -0.4, 0.8);
-	glVertex3f(0.0, -0.4, -0.8);
-
-	glVertex3f(0.0, 1.6, 0.0);
-	glVertex3f(0.0, -0.4, -0.8);
-	glVertex3f(-0.8, -0.4, 0.8);
-
-	glVertex3f(-0.8, -0.4, 0.8);
-	glVertex3f(0.8, -0.4, 0.8);
-	glVertex3f(0.0, -0.4, -0.8);
-	glEnd();
-	*/
+}
+void drawAxis() {
 	if (AXIS_ON) {
 		// Draw a green line
 		glColor3f(0, 1, 0);
@@ -264,14 +225,38 @@ void	display(void)
 		glVertex3f(0, 0, 4);
 		glEnd();
 	}
-	glPopMatrix();
-
-	// (Note that the origin is lower left corner)
-	// (Note also that the window spans (0,1) )
-	// Finish drawing, update the frame buffer, and swap buffers
-	glutSwapBuffers();
 }
 
+void draw_blue_tetraheadron() {
+	glColor3f(0, 0, 1);
+	glBegin(GL_TRIANGLES);
+	glVertex3f(0.0, 1.6, 0.0);
+	glVertex3f(0.8, -0.4, 0.8);
+	glVertex3f(-0.8, -0.4, 0.8);
+
+	glVertex3f(0.0, 1.6, 0.0);
+	glVertex3f(0.8, -0.4, 0.8);
+	glVertex3f(0.0, -0.4, -0.8);
+
+	glVertex3f(0.0, 1.6, 0.0);
+	glVertex3f(0.0, -0.4, -0.8);
+	glVertex3f(-0.8, -0.4, 0.8);
+
+	glVertex3f(-0.8, -0.4, 0.8);
+	glVertex3f(0.8, -0.4, 0.8);
+	glVertex3f(0.0, -0.4, -0.8);
+	glEnd();
+}
+
+void draw_red_rectangle() {
+		glColor3f(1,0,0);
+		glBegin(GL_POLYGON);
+		glVertex3f(0.8,0.8,-0.8);
+		glVertex3f(0.8,-0.8,-0.8);
+		glVertex3f(-0.8,-0.8,-0.0);
+		glVertex3f(-0.8,0.8,-0.0);
+	   glEnd();
+}
 
 // This function is called whenever the window is resized. 
 // Parameters are the new dimentions of the window
