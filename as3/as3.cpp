@@ -18,6 +18,7 @@ float eyeX, eyeY, eyeZ;
 int oldX, oldY;
 int rotate, zoom;
 Matrix4x4 currentMatrix;
+point translation; //faking as a 3d vector
 
 
 int verts, faces, norms;    // Number of vertices, faces and normals in the system
@@ -177,6 +178,9 @@ void	display(void)
 	glRotatef(degrees, 0.0, 0.0, 1);
 	drawAxis();
 //	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	matrixTranslate(translation.x, translation.y, translation.z);
+	glLoadMatrixf(matrixToarray(currentMatrix));
 
 	// (Note that the origin is lower left corner)
 	// (Note also that the window spans (0,1) )
@@ -339,8 +343,9 @@ void	keyboard(unsigned char key, int x, int y)
 		break;
 	case 's':
 		OBJECT_ON = !OBJECT_ON;
-
 		break;
+	case '4': //negative translate along x axis
+
 	default:
 		printf("wtf");
 		break;
@@ -350,10 +355,12 @@ void	keyboard(unsigned char key, int x, int y)
 	glutPostRedisplay();
 }
 
+
+
+
 // These geometric functions are modified from chapter9-4
 
 /* Construct the 4 x 4 identity matrix. */
-
 void setIdentity(Matrix4x4 matIdent4x4)
 {
 	int row, col;
@@ -460,6 +467,19 @@ void matrixScale(float sx, float sy, float sz, _point fixedPt)
 	matrixMultiply(matScale3D, currentMatrix);
 }
 
+
+
+/* matrix to array in column major order*/
+float* matrixToarray(Matrix4x4 m) {
+	float* array = new float[16];
+	for (int i = 0; i < 4; ++i) {
+		for (int j = 0; j < 4; ++j) {
+			array[i + 4 * j] = m[i][j];
+		}
+	}
+	return array;
+}
+
 void printCurrentMatrix() {
 	std::cout << "current matrix\n";
 	std::cout << currentMatrix[0][0] << " " << currentMatrix[0][1] << " " << currentMatrix[0][2] << " " << currentMatrix[0][3] << '\n';
@@ -489,6 +509,10 @@ int main(int argc, char* argv[])
 	glLoadIdentity();
 	glEnable(GL_DEPTH_TEST);
 	meshReader("sphere.obj", 1);
+
+	translation.x = 0;
+	translation.y = 0;
+	translation.z = 0;
 	printCurrentMatrix();
 	glutMainLoop();
 	return 0;

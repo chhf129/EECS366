@@ -36,3 +36,4 @@ void matrixTranslate(float tx, float ty, float tz);
 void matrixRotate(_point p1, _point p2, float radianAngle);
 void matrixScale(float sx, float sy, float sz, _point fixedPt);
 void printCurrentMatrix();
+float* matrixToarray(Matrix4x4 m);
