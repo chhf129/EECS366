@@ -177,6 +177,17 @@ void	display(void)
 	glGetFloatv(GL_MODELVIEW_MATRIX, tempArray);
 	arrayToMatrix(tempArray, tempMatrix);
 	
+	/*
+	   glMaxtrix(modelview)
+	   glLoadMatrixf(ViewTransform);
+
+	   glMaxtrix(modelview)
+	   glLoadMatrixf(modellingTransform);
+	   drawObject
+	*/
+
+
+
 	//matrix manipulation
 	matrixMultiply(tempMatrix, modelMatrix);
 	matrixMultiply(localRotation, modelMatrix); //maybe store result in m1?
@@ -482,19 +493,30 @@ void matrixTranslate(float tx, float ty, float tz ,Matrix4x4 m)
 
 void rotateMatrix(float degree, char axis, Matrix4x4 m) {
 	float radian = degree * (3.1415926 / 180.0);
-	float matrixX[4][4] =
-	
-	
-	
-	{ 1, 0, 0, 0,   0, cos(radian), sin(radian),0,     0, -1.0 * sin(radian), cos(radian), 0,  0,0,0,1 };
-	float matrixY[4][4] = { cos(radian), 0, -1.0 * sin(radian),0,     0, 1, 0,0,    sin(radian), 0, cos(radian),0   ,0,0,0,1 };
-	float matrixZ[4][4] = { cos(radian), sin(radian), 0,0,   -1.0 * sin(radian), cos(radian),0,0,  0, 0, 1,0,  0,0,0,1};
+	float matrixX[4][4] = { 
+						  {1,0,0,0},
+						  {0,cos(radian),-1.0 * sin(radian),0},
+						  {0,sin(radian),cos(radian),0},
+						  {0,0,0,1} };
+	float matrixY[4][4] = {
+						  {cos(radian),0,sin(radian),0},
+						  {0,1,0,0},
+						  {-1.0*sin(radian),0,cos(radian),0},
+						  {0,0,0,1} };
+							     
+	float matrixZ[4][4] = { 
+						  {cos(radian),-1.0*sin(radian),0,0},
+						  {sin(radian),cos(radian),0,0},
+						  {0,0,1,0},
+						  {0,0,0,1} };
 
 	switch (axis) {
 	case 'x':
 		matrixMultiply(matrixX, m);
 	case 'y':
+		matrixMultiply(matrixY, m);
 	case 'z':
+		matrixMultiply(matrixZ, m);
 	default:
 		
 	}
