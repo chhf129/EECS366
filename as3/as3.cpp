@@ -2,7 +2,7 @@
 //James Du, Haifeng Chen
 
 #include "as3.h"
-
+#define TRANSLATE_INDEX 1
 
 
 // Global variables
@@ -154,8 +154,6 @@ void	display(void)
 		glLoadIdentity();
 		gluPerspective(60, (GLdouble)window_width / window_height, 0.01, 10000);
 		glutSetWindowTitle("Assignment 2 Template (perspective)");
-		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
 		// Set the camera position, orientation and target
 		eyeX = rho * cos(theta)*sin(phi);
 		eyeY = rho * sin(theta)*sin(phi);
@@ -168,24 +166,41 @@ void	display(void)
 		glLoadIdentity();
 		glOrtho(-0.25*rho, 0.25*rho, -0.25*rho, 0.25*rho, -10000, 10000);
 		glutSetWindowTitle("Assignment 2 Template (orthogonal)");
-		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
 	}
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	
+	
+	GLfloat tempMatrix[16];
+    glGetFloatv(GL_MODELVIEW_MATRIX, tempMatrix);
+	arrayToMatrix(tempMatrix, currentMatrix);
+
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	drawObject();
 //	glPushMatrix();
 	glRotatef(degrees, 0.0, 0.0, 1);
-	drawAxis();
-//	glPopMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	matrixTranslate(translation.x, translation.y, translation.z);
+//	matrixTranslate(translation.x, translation.y, translation.z);
 	glLoadMatrixf(matrixToarray(currentMatrix));
+	
+//	glMatrixMode(GL_MODELVIEW);
+	setIdentity();
+//	glLoadMatrixf(matrixToarray(currentMatrix));
+	drawAxis();
+	
+//	glPopMatrix();
+
+	//check error
+	GLenum glErr;
+	glErr = glGetError();
+	printf("%s\n",gluErrorString(glErr));
+	
 
 	// (Note that the origin is lower left corner)
 	// (Note also that the window spans (0,1) )
 	// Finish drawing, update the frame buffer, and swap buffers
 	glutSwapBuffers();
+	printCurrentMatrix();
 }
 
 void drawObject() {
@@ -345,7 +360,53 @@ void	keyboard(unsigned char key, int x, int y)
 		OBJECT_ON = !OBJECT_ON;
 		break;
 	case '4': //negative translate along x axis
-
+		translation.x -= TRANSLATE_INDEX;
+		break;
+	case '6':
+		translation.x += TRANSLATE_INDEX;
+		break;
+	case '8':
+		translation.y += TRANSLATE_INDEX;
+		break;
+	case '2':
+		translation.y -= TRANSLATE_INDEX;
+		break;
+	case '9':
+		translation.z += TRANSLATE_INDEX;
+		break;
+	case '1':
+		translation.z -= TRANSLATE_INDEX;
+		break;
+	case '[':
+		break;
+	case ']':
+		break;
+	case ';':
+		break;
+	case '\'':
+		break;
+	case '.':
+		break;
+	case '/':
+		break;
+	case '=':
+		break;
+	case '-':
+		break;
+	case 'i':
+		break;
+	case 'o':
+		break;
+	case 'k':  
+		break;
+	case 'l':  
+		break;
+	case 'm': 
+		break;
+	case ',': 
+		break;
+	
+	
 	default:
 		printf("wtf");
 		break;
@@ -361,13 +422,13 @@ void	keyboard(unsigned char key, int x, int y)
 // These geometric functions are modified from chapter9-4
 
 /* Construct the 4 x 4 identity matrix. */
-void setIdentity(Matrix4x4 matIdent4x4)
+void setIdentity()
 {
 	int row, col;
 
 	for (row = 0; row < 4; row++)
 		for (col = 0; col < 4; col++)
-			matIdent4x4[row][col] = (row == col);
+			currentMatrix[row][col] = (row == col);
 }
 
 /* Premultiply matrix m1 by matrix m2, store result in m2. */
@@ -394,7 +455,7 @@ void matrixTranslate(float tx, float ty, float tz)
 	Matrix4x4 matTransl3D;
 
 	//  Initialize translation matrix to identity.  
-	setIdentity(matTransl3D);
+	setIdentity();
 
 	matTransl3D[0][3] = tx;
 	matTransl3D[1][3] = ty;
@@ -426,7 +487,7 @@ void matrixRotate(_point p1, _point p2, float radianAngle)
 	matrixTranslate(-p1.x, -p1.y, -p1.z);
 
 	//  Initialize matQuatRot to identity matrix.  
-	setIdentity(matQuatRot);
+	setIdentity();
 
 	matQuatRot[0][0] = ux*ux*oneC + cosA;
 	matQuatRot[0][1] = ux*uy*oneC - uz*sinA;
@@ -454,7 +515,7 @@ void matrixScale(float sx, float sy, float sz, _point fixedPt)
 	Matrix4x4 matScale3D;
 
 	// Initialize scaling matrix to identity.  
-	setIdentity(matScale3D);
+	setIdentity();
 
 	matScale3D[0][0] = sx;
 	matScale3D[0][3] = (1 - sx) * fixedPt.x;
@@ -471,13 +532,23 @@ void matrixScale(float sx, float sy, float sz, _point fixedPt)
 
 /* matrix to array in column major order*/
 float* matrixToarray(Matrix4x4 m) {
-	float* array = new float[16];
+//	float* array = new float[16];
+	float array[16];
 	for (int i = 0; i < 4; ++i) {
 		for (int j = 0; j < 4; ++j) {
 			array[i + 4 * j] = m[i][j];
 		}
 	}
 	return array;
+}
+
+void arrayToMatrix(GLfloat* array, Matrix4x4 m) {
+	for (int i = 0; i < 4; ++i) {
+		for (int j = 0; j < 4; ++j) {
+			m[i][j] = (float)array[i + 4 * j];
+		}
+	}
+
 }
 
 void printCurrentMatrix() {
@@ -505,6 +576,9 @@ int main(int argc, char* argv[])
 	glutMotionFunc(OnMouseMove);
 	glutKeyboardFunc(keyboard);
 
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(-2.5, 2.5, -2.5, 2.5, -10000, 10000);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	glEnable(GL_DEPTH_TEST);
@@ -513,7 +587,6 @@ int main(int argc, char* argv[])
 	translation.x = 0;
 	translation.y = 0;
 	translation.z = 0;
-	printCurrentMatrix();
 	glutMainLoop();
 	return 0;
 }
