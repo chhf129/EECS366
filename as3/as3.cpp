@@ -17,7 +17,7 @@ float rho = 10;
 float eyeX, eyeY, eyeZ;
 int oldX, oldY;
 int rotate, zoom;
-Matrix4x4 currentMatrix;
+Matrix4x4 modelMatrix, viewMatrix, localRotation, worldRotation;
 point translation; //faking as a 3d vector
 
 
@@ -167,28 +167,42 @@ void	display(void)
 		glOrtho(-0.25*rho, 0.25*rho, -0.25*rho, 0.25*rho, -10000, 10000);
 		glutSetWindowTitle("Assignment 2 Template (orthogonal)");
 	}
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
 	
 	
-	GLfloat tempMatrix[16];
-    glGetFloatv(GL_MODELVIEW_MATRIX, tempMatrix);
-	arrayToMatrix(tempMatrix, currentMatrix);
+	
+	
+	//load current modelview matrix to tempMatrix
+	GLfloat tempArray[16];
+	Matrix4x4 tempMatrix;
+	glGetFloatv(GL_MODELVIEW_MATRIX, tempArray);
+	arrayToMatrix(tempArray, tempMatrix);
+	
+	//matrix manipulation
+	matrixMultiply(tempMatrix, modelMatrix);
+	matrixMultiply(localRotation, modelMatrix); //maybe store result in m1?
+	matrixTranslate(translation.x, translation.y, translation.z, modelMatrix);
+	//model matrix rotation
 
+	//viewMatrix= viewTransform();
+
+	//apply matrix
+//	matrixToarray(currentMatrix, tempArray);
+	glLoadMatrixf(tempArray);
+
+
+	glMatrixMode(GL_MODELVIEW);
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	drawObject();
 //	glPushMatrix();
 	glRotatef(degrees, 0.0, 0.0, 1);
-//	matrixTranslate(translation.x, translation.y, translation.z);
-	glLoadMatrixf(matrixToarray(currentMatrix));
+//	
+
 	
-//	glMatrixMode(GL_MODELVIEW);
-	setIdentity();
-//	glLoadMatrixf(matrixToarray(currentMatrix));
 	drawAxis();
 	
 //	glPopMatrix();
+
 
 	//check error
 	GLenum glErr;
@@ -200,7 +214,6 @@ void	display(void)
 	// (Note also that the window spans (0,1) )
 	// Finish drawing, update the frame buffer, and swap buffers
 	glutSwapBuffers();
-	printCurrentMatrix();
 }
 
 void drawObject() {
@@ -422,13 +435,13 @@ void	keyboard(unsigned char key, int x, int y)
 // These geometric functions are modified from chapter9-4
 
 /* Construct the 4 x 4 identity matrix. */
-void setIdentity()
+void setIdentity(Matrix4x4 m)
 {
 	int row, col;
 
 	for (row = 0; row < 4; row++)
 		for (col = 0; col < 4; col++)
-			currentMatrix[row][col] = (row == col);
+			m[row][col] = (row == col);
 }
 
 /* Premultiply matrix m1 by matrix m2, store result in m2. */
@@ -450,72 +463,51 @@ void matrixMultiply(Matrix4x4 m1, Matrix4x4 m2)
 
 /*  Procedure for generating 3D translation matrix.  */
 
-void matrixTranslate(float tx, float ty, float tz)
+void matrixTranslate(float tx, float ty, float tz ,Matrix4x4 m)
 {
 	Matrix4x4 matTransl3D;
 
 	//  Initialize translation matrix to identity.  
-	setIdentity();
+	setIdentity(m);
 
 	matTransl3D[0][3] = tx;
 	matTransl3D[1][3] = ty;
 	matTransl3D[2][3] = tz;
 
 	//  Concatenate matTransl3D with composite matrix.  
-	matrixMultiply(matTransl3D, currentMatrix);
+	matrixMultiply(matTransl3D, m);
 }
 
-/*  Procedure for generating a quaternion rotation matrix.  */
+/*  Procedure for generating a \ rotation matrix.  */
 
-void matrixRotate(_point p1, _point p2, float radianAngle)
-{
-	Matrix4x4 matQuatRot;
+void rotateMatrix(float degree, char axis, Matrix4x4 m) {
+	float radian = degree * (3.1415926 / 180.0);
+	float matrixX[4][4] =
+	
+	
+	
+	{ 1, 0, 0, 0,   0, cos(radian), sin(radian),0,     0, -1.0 * sin(radian), cos(radian), 0,  0,0,0,1 };
+	float matrixY[4][4] = { cos(radian), 0, -1.0 * sin(radian),0,     0, 1, 0,0,    sin(radian), 0, cos(radian),0   ,0,0,0,1 };
+	float matrixZ[4][4] = { cos(radian), sin(radian), 0,0,   -1.0 * sin(radian), cos(radian),0,0,  0, 0, 1,0,  0,0,0,1};
 
-	float axisVectLength = sqrt((p2.x - p1.x) * (p2.x - p1.x) +
-		(p2.y - p1.y) * (p2.y - p1.y) +
-		(p2.z - p1.z) * (p2.z - p1.z));
-	float cosA = cosf(radianAngle);
-	float oneC = 1 - cosA;
-	float sinA = sinf(radianAngle);
-	float ux = (p2.x - p1.x) / axisVectLength;
-	float uy = (p2.y - p1.y) / axisVectLength;
-	float uz = (p2.z - p1.z) / axisVectLength;
-
-	//  Set up translation matrix for moving p1 to origin,
-	// and concatenate translation matrix with currentMatrix.
-
-	matrixTranslate(-p1.x, -p1.y, -p1.z);
-
-	//  Initialize matQuatRot to identity matrix.  
-	setIdentity();
-
-	matQuatRot[0][0] = ux*ux*oneC + cosA;
-	matQuatRot[0][1] = ux*uy*oneC - uz*sinA;
-	matQuatRot[0][2] = ux*uz*oneC + uy*sinA;
-	matQuatRot[1][0] = uy*ux*oneC + uz*sinA;
-	matQuatRot[1][1] = uy*uy*oneC + cosA;
-	matQuatRot[1][2] = uy*uz*oneC - ux*sinA;
-	matQuatRot[2][0] = uz*ux*oneC - uy*sinA;
-	matQuatRot[2][1] = uz*uy*oneC + ux*sinA;
-	matQuatRot[2][2] = uz*uz*oneC + cosA;
-
-	//  Concatenate matQuatRot with composite matrix.  
-	matrixMultiply(matQuatRot, currentMatrix);
-
-	// Construct inverse translation matrix for p1 and
-	//  concatenate with composite matrix.
-
-	matrixTranslate(p1.x, p1.y, p1.z);
+	switch (axis) {
+	case 'x':
+		matrixMultiply(matrixX, m);
+	case 'y':
+	case 'z':
+	default:
+		
+	}
 }
 
 /*  Procedure for generating a 3D scaling matrix.  */
 
-void matrixScale(float sx, float sy, float sz, _point fixedPt)
+void matrixScale(float sx, float sy, float sz, _point fixedPt, Matrix4x4 m)
 {
 	Matrix4x4 matScale3D;
 
 	// Initialize scaling matrix to identity.  
-	setIdentity();
+	setIdentity(m);
 
 	matScale3D[0][0] = sx;
 	matScale3D[0][3] = (1 - sx) * fixedPt.x;
@@ -525,21 +517,25 @@ void matrixScale(float sx, float sy, float sz, _point fixedPt)
 	matScale3D[2][3] = (1 - sz) * fixedPt.z;
 
 	//  Concatenate matScale3D with composite matrix.  
-	matrixMultiply(matScale3D, currentMatrix);
+	matrixMultiply(matScale3D, m);
 }
 
-
+//m1 assign to m2
+void MatrixAssignment(Matrix4x4 m1, Matrix4x4 m2) {
+	for (int i = 0; i < 4; ++i) {
+		for (int j = 0; j < 4; ++j) {
+			m2[i][j] = m1[i][j];
+		}
+	}
+}
 
 /* matrix to array in column major order*/
-float* matrixToarray(Matrix4x4 m) {
-//	float* array = new float[16];
-	float array[16];
+void matrixToarray(Matrix4x4 m, float array[]) {
 	for (int i = 0; i < 4; ++i) {
 		for (int j = 0; j < 4; ++j) {
 			array[i + 4 * j] = m[i][j];
 		}
 	}
-	return array;
 }
 
 void arrayToMatrix(GLfloat* array, Matrix4x4 m) {
@@ -551,16 +547,34 @@ void arrayToMatrix(GLfloat* array, Matrix4x4 m) {
 
 }
 
-void printCurrentMatrix() {
+void printMatrix(Matrix4x4 m) {
 	std::cout << "current matrix\n";
-	std::cout << currentMatrix[0][0] << " " << currentMatrix[0][1] << " " << currentMatrix[0][2] << " " << currentMatrix[0][3] << '\n';
-	std::cout << currentMatrix[1][0] << " " << currentMatrix[1][1] << " " << currentMatrix[1][2] << " " << currentMatrix[1][3] << '\n';
-	std::cout << currentMatrix[2][0] << " " << currentMatrix[2][1] << " " << currentMatrix[2][2] << " " << currentMatrix[2][3] << '\n';
-	std::cout << currentMatrix[3][0] << " " << currentMatrix[3][1] << " " << currentMatrix[3][2] << " " << currentMatrix[3][3] << '\n';
+	std::cout << m[0][0] << " " << m[0][1] << " " << m[0][2] << " " << m[0][3] << '\n';
+	std::cout << m[1][0] << " " << m[1][1] << " " << m[1][2] << " " << m[1][3] << '\n';
+	std::cout << m[2][0] << " " << m[2][1] << " " << m[2][2] << " " << m[2][3] << '\n';
+	std::cout << m[3][0] << " " << m[3][1] << " " << m[3][2] << " " << m[3][3] << '\n';
 }
 
+void printArray(float* a) {
+	for (int i = 0; i < 16; i++) {
+		printf("%f ", a[i]);
+	}
+	printf("\n");
+}
+
+/*
+void viewTransform(point p, point n, point v, Matrix4x4 m) {
+
+	float nMagnitue = sqrt(pow(n.x, 2) + pow(n.y, 2) + pow(n.z, 2));
+	n.x = n.x / nMagnitue;
 
 
+		m[0][1] = u.x;
+		m[]
+
+	return m;
+}
+*/
 
 
 
