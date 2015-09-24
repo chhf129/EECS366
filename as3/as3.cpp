@@ -3,6 +3,7 @@
 
 #include "as3.h"
 #define TRANSLATE_INDEX 1
+#define ROTATION_INDEX_RADIAN 0.35
 
 
 // Global variables
@@ -18,7 +19,7 @@ float eyeX, eyeY, eyeZ;
 int oldX, oldY;
 int rotate, zoom;
 Matrix4x4 modelMatrix, viewMatrix, localRotation, worldRotation;
-point translation; //faking as a 3d vector
+point worldTranslation, localTranslation; //faking as a 3d vector
 
 
 int verts, faces, norms;    // Number of vertices, faces and normals in the system
@@ -190,8 +191,15 @@ void	display(void)
 
 	//matrix manipulation
 	matrixMultiply(tempMatrix, modelMatrix);
+	
+	matrixMultiply(worldRotation, modelMatrix);
+	matrixTranslate(worldTranslation.x, worldTranslation.y, worldTranslation.z, modelMatrix);
+
 	matrixMultiply(localRotation, modelMatrix); //maybe store result in m1?
-	matrixTranslate(translation.x, translation.y, translation.z, modelMatrix);
+	matrixTranslate(localTranslation.x, localTranslation.y, localTranslation.z, modelMatrix);
+	
+
+	
 	//model matrix rotation
 
 	//viewMatrix= viewTransform();
@@ -384,34 +392,40 @@ void	keyboard(unsigned char key, int x, int y)
 		OBJECT_ON = !OBJECT_ON;
 		break;
 	case '4': //negative translate along x axis
-		translation.x -= TRANSLATE_INDEX;
+		worldTranslation.x -= TRANSLATE_INDEX;
 		break;
 	case '6':
-		translation.x += TRANSLATE_INDEX;
+		worldTranslation.x += TRANSLATE_INDEX;
 		break;
 	case '8':
-		translation.y += TRANSLATE_INDEX;
+		worldTranslation.y += TRANSLATE_INDEX;
 		break;
 	case '2':
-		translation.y -= TRANSLATE_INDEX;
+		worldTranslation.y -= TRANSLATE_INDEX;
 		break;
 	case '9':
-		translation.z += TRANSLATE_INDEX;
+		worldTranslation.z += TRANSLATE_INDEX;
 		break;
 	case '1':
-		translation.z -= TRANSLATE_INDEX;
+		worldTranslation.z -= TRANSLATE_INDEX;
 		break;
 	case '[':
+		matrixRotate(-ROTATION_INDEX_RADIAN, 'x', worldRotation);
 		break;
 	case ']':
+		matrixRotate(ROTATION_INDEX_RADIAN, 'x', worldRotation);
 		break;
 	case ';':
+		matrixRotate(-ROTATION_INDEX_RADIAN, 'y', worldRotation);
 		break;
 	case '\'':
+		matrixRotate(ROTATION_INDEX_RADIAN, 'y' , worldRotation);
 		break;
 	case '.':
+		matrixRotate(-ROTATION_INDEX_RADIAN, 'z', worldRotation);
 		break;
 	case '/':
+		matrixRotate(ROTATION_INDEX_RADIAN, 'z', worldRotation);
 		break;
 	case '=':
 		break;
@@ -491,8 +505,8 @@ void matrixTranslate(float tx, float ty, float tz ,Matrix4x4 m)
 
 /*  Procedure for generating a \ rotation matrix.  */
 
-void rotateMatrix(float degree, char axis, Matrix4x4 m) {
-	float radian = degree * (3.1415926 / 180.0);
+void matrixRotate(float radian, char axis, Matrix4x4 m) {
+//	float radian = degree * (3.1415926 / 180.0);
 	float matrixX[4][4] = { 
 						  {1,0,0,0},
 						  {0,cos(radian),-1.0 * sin(radian),0},
@@ -620,9 +634,10 @@ int main(int argc, char* argv[])
 	glEnable(GL_DEPTH_TEST);
 	meshReader("sphere.obj", 1);
 
-	translation.x = 0;
-	translation.y = 0;
-	translation.z = 0;
+	//init() needed
+	//translation.x = 0;
+	//translation.y = 0;
+	//translation.z = 0;
 	glutMainLoop();
 	return 0;
 }

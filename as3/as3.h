@@ -33,7 +33,7 @@ void	keyboard(unsigned char key, int x, int y);
 void setIdentity(Matrix4x4 m);
 void matrixMultiply(Matrix4x4 m1, Matrix4x4 m2);
 void matrixTranslate(float tx, float ty, float tz, Matrix4x4 m);
-void matrixRotate(_point p1, _point p2, float radianAngle, Matrix4x4 m);
+void matrixRotate(float degree, char axis, Matrix4x4 m);
 void matrixScale(float sx, float sy, float sz, _point fixedPt, Matrix4x4 m);
 void printMatrix(Matrix4x4 m);
 void arrayToMatrix(GLfloat* array, Matrix4x4 m);
