@@ -39,3 +39,4 @@ void printMatrix(Matrix4x4 m);
 void arrayToMatrix(GLfloat* array, Matrix4x4 m);
 void matrixToarray(Matrix4x4 m, float array[]);
 void MatrixAssignment(Matrix4x4 m1, Matrix4x4 m2);
+void init();

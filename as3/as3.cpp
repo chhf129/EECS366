@@ -2,8 +2,9 @@
 //James Du, Haifeng Chen
 
 #include "as3.h"
-#define TRANSLATE_INDEX 1
+#define TRANSLATE_INDEX 0.5
 #define ROTATION_INDEX_RADIAN 0.35
+#define SCALE_INDEX 0.1
 
 
 // Global variables
@@ -29,6 +30,7 @@ float upZ = 1;
 int oldX, oldY;
 int rotateHead, zoom, moveBody;
 float moveX, moveY;
+float scale = 1;
 Matrix4x4 modelMatrix, viewMatrix, localRotation, worldRotation;
 point worldTranslation, localTranslation; //faking as a 3d vector
 
@@ -163,7 +165,7 @@ void	display(void)
 {
 	// Clear the background
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+	
 	if (PERSPECTIVE) {
 		// Perpective Projection 
 		glMatrixMode(GL_PROJECTION);
@@ -171,10 +173,12 @@ void	display(void)
 		gluPerspective(60, (GLdouble)window_width / window_height, 0.01, 10000);
 		glutSetWindowTitle("Assignment 2 Template (perspective)");
 		// Set the camera position, orientation and target
-		/*eyeX = rho * cos(theta)*sin(phi);
+		/*
+		eyeX = rho * cos(theta)*sin(phi);
 		eyeY = rho * sin(theta)*sin(phi);
 		eyeZ = rho * cos(phi);
-		gluLookAt(eyeX, eyeY, eyeZ, 0, 0, 0, 0, 1, 0);*/
+		gluLookAt(eyeX, eyeY, eyeZ, 0, 0, 0, 0, 1, 0);
+		*/
 	}
 	else {
 		// Orthogonal Projection 
@@ -183,15 +187,6 @@ void	display(void)
 		glOrtho(-0.25*rho, 0.25*rho, -0.25*rho, 0.25*rho, -10000, 10000);
 		glutSetWindowTitle("Assignment 2 Template (orthogonal)");
 	}
-	
-	
-	
-	
-	//load current modelview matrix to tempMatrix
-	GLfloat tempArray[16];
-	Matrix4x4 tempMatrix;
-	glGetFloatv(GL_MODELVIEW_MATRIX, tempArray);
-	arrayToMatrix(tempArray, tempMatrix);
 	
 	/*
 	   glMaxtrix(modelview)
@@ -204,16 +199,8 @@ void	display(void)
 
 
 
-	//matrix manipulation
-	matrixMultiply(tempMatrix, modelMatrix);
 	
-	matrixMultiply(worldRotation, modelMatrix);
-	matrixTranslate(worldTranslation.x, worldTranslation.y, worldTranslation.z, modelMatrix);
 
-	matrixMultiply(localRotation, modelMatrix); //maybe store result in m1?
-	matrixTranslate(localTranslation.x, localTranslation.y, localTranslation.z, modelMatrix);
-	
-	//model matrix rotation
 
 	//viewMatrix= viewTransform();
 	centerX = 1 * cos(theta)*sin(phi) + eyeX;
@@ -244,19 +231,43 @@ void	display(void)
 	glMultMatrixf(M);
 	glTranslatef(-eyeX, -eyeY, -eyeZ);
 	
-	//apply matrix
-//	matrixToarray(currentMatrix, tempArray);
-	//glLoadMatrixf(tempArray);
 
 
+	GLfloat tempArray[16];
 	glMatrixMode(GL_MODELVIEW);
+	//printMatrix(modelMatrix);
+	matrixMultiply(worldRotation, modelMatrix);
+	
+	matrixTranslate(worldTranslation.x, worldTranslation.y, worldTranslation.z, modelMatrix);
+	
+	matrixMultiply(localRotation, modelMatrix); //maybe store result in m1?
+	matrixTranslate(localTranslation.x, localTranslation.y, localTranslation.z, modelMatrix);
+	
+	//apply matrix
+	matrixToarray(modelMatrix, tempArray);
+//	
+
+
+	//load current modelview matrix to tempMatrix
+	
+	Matrix4x4 tempMatrix;
+//	glGetFloatv(GL_MODELVIEW_MATRIX, tempArray);
+//	arrayToMatrix(tempArray, tempMatrix);
+	glLoadMatrixf(tempArray);
+	printMatrix(modelMatrix);
+	
+	
+
+
+
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
 	drawObject();
 //	glPushMatrix();
 //	
 
-	
+	glLoadIdentity();
 	drawAxis();
 	
 //	glPopMatrix();
@@ -267,7 +278,7 @@ void	display(void)
 	glErr = glGetError();
 	printf("%s\n",gluErrorString(glErr));
 	
-
+	init();
 	// (Note that the origin is lower left corner)
 	// (Note also that the window spans (0,1) )
 	// Finish drawing, update the frame buffer, and swap buffers
@@ -277,20 +288,23 @@ void	display(void)
 void drawObject() {
 	if (OBJECT_ON) {
 		glColor3f(1, 0, 0);
-		glBegin(GL_TRIANGLES);
+		glBegin(GL_POLYGON);
 		for (int i = 0; i < faces; i++) {
-			glNormal3f(normList[(faceList[i].v1)].x, normList[(faceList[i].v1)].y, normList[(faceList[i].v1)].z); // normals
-			glVertex3f(vertList[(faceList[i].v1)].x, vertList[(faceList[i].v1)].y, vertList[(faceList[i].v1)].z);
+			glNormal3f(normList[(faceList[i].v1)].x / scale, normList[(faceList[i].v1)].y / scale, normList[(faceList[i].v1)].z / scale); // normals
+			glVertex3f(vertList[(faceList[i].v1)].x / scale, vertList[(faceList[i].v1)].y / scale, vertList[(faceList[i].v1)].z / scale);
 
-			glNormal3f(normList[(faceList[i].v2)].x, normList[(faceList[i].v2)].y, normList[(faceList[i].v2)].z); // normals
-			glVertex3f(vertList[(faceList[i].v2)].x, vertList[(faceList[i].v2)].y, vertList[(faceList[i].v2)].z);
+			glNormal3f(normList[(faceList[i].v2)].x / scale, normList[(faceList[i].v2)].y / scale, normList[(faceList[i].v2)].z / scale); // normals
+			glVertex3f(vertList[(faceList[i].v2)].x / scale, vertList[(faceList[i].v2)].y / scale, vertList[(faceList[i].v2)].z / scale);
 
-			glNormal3f(normList[(faceList[i].v3)].x, normList[(faceList[i].v3)].y, normList[(faceList[i].v3)].z); // normals
-			glVertex3f(vertList[(faceList[i].v3)].x, vertList[(faceList[i].v3)].y, vertList[(faceList[i].v3)].z);
+			glNormal3f(normList[(faceList[i].v3)].x / scale, normList[(faceList[i].v3)].y / scale, normList[(faceList[i].v3)].z / scale); // normals
+			glVertex3f(vertList[(faceList[i].v3)].x / scale, vertList[(faceList[i].v3)].y / scale, vertList[(faceList[i].v3)].z / scale);
 		}
 		glEnd();
 	}
 }
+
+
+
 void drawAxis() {
 	if (AXIS_ON) {
 		// Draw a green line
@@ -481,8 +495,10 @@ void keyboard(unsigned char key, int x, int y)
 		matrixRotate(ROTATION_INDEX_RADIAN, 'z', worldRotation);
 		break;
 	case '=':
+		scale += SCALE_INDEX;
 		break;
 	case '-':
+		scale -= SCALE_INDEX;
 		break;
 	case 'i':
 		break;
@@ -546,7 +562,7 @@ void matrixTranslate(float tx, float ty, float tz ,Matrix4x4 m)
 	Matrix4x4 matTransl3D;
 
 	//  Initialize translation matrix to identity.  
-	setIdentity(m);
+	setIdentity(matTransl3D);
 
 	matTransl3D[0][3] = tx;
 	matTransl3D[1][3] = ty;
@@ -596,7 +612,7 @@ void matrixScale(float sx, float sy, float sz, _point fixedPt, Matrix4x4 m)
 	Matrix4x4 matScale3D;
 
 	// Initialize scaling matrix to identity.  
-	setIdentity(m);
+	setIdentity(matScale3D);
 
 	matScale3D[0][0] = sx;
 	matScale3D[0][3] = (1 - sx) * fixedPt.x;
@@ -665,7 +681,17 @@ void viewTransform(point p, point n, point v, Matrix4x4 m) {
 }
 */
 
-
+void init() {
+	setIdentity(worldRotation);
+	setIdentity(localRotation);
+	worldTranslation.x = 0;
+	worldTranslation.y = 0;
+	worldTranslation.z = 0;
+	localTranslation.x = 0;
+	localTranslation.y = 0;
+	localTranslation.z = 0;
+	
+}
 
 
 int main(int argc, char* argv[])
@@ -685,12 +711,10 @@ int main(int argc, char* argv[])
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	glEnable(GL_DEPTH_TEST);
-	meshReader("sphere.obj", 1);
+	meshReader("teapot.obj", 1);
 
-	//init() needed
-	//translation.x = 0;
-	//translation.y = 0;
-	//translation.z = 0;
+	setIdentity(modelMatrix);
+	init();
 	glutMainLoop();
 	return 0;
 }
