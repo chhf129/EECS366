@@ -32,7 +32,7 @@ int rotateHead, zoom, moveBody;
 float moveX, moveY;
 float scale = 1;
 Matrix4x4 modelMatrix, localAxisMatrix, localRotation, worldRotation;
-point worldTranslation; //faking as a 3d vector
+point worldTranslation, distanceToOrigin; //faking as a 3d vector
 
 
 int verts, faces, norms;    // Number of vertices, faces and normals in the system
@@ -238,48 +238,37 @@ void	display(void)
 	//printMatrix(modelMatrix);
 	matrixMultiply(worldRotation, modelMatrix);
 	
-	matrixTranslate(worldTranslation.x, worldTranslation.y, worldTranslation.z, modelMatrix);
-	matrixTranslate(worldTranslation.x, worldTranslation.y, worldTranslation.z, localAxisMatrix);
+	matrixTranslate(worldTranslation, modelMatrix);
+	matrixTranslate(worldTranslation, localAxisMatrix);
 
 	matrixMultiply(localRotation, modelMatrix); 
-	//apply matrix
 	matrixToarray(modelMatrix, tempArray);
-//	
-
-
-	//load current modelview matrix to tempMatrix
 	
-	Matrix4x4 tempMatrix;
+
+//	Matrix4x4 tempMatrix;
 //	glGetFloatv(GL_MODELVIEW_MATRIX, tempArray);
 //	arrayToMatrix(tempArray, tempMatrix);
 	glLoadMatrixf(tempArray);
 	printMatrix(modelMatrix);
-	
-	
-
-
-
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
 	drawObject();
-//	glPushMatrix();
-//	
 
 	glLoadIdentity();
 	drawAxis();    //global axis
-	
+
 	matrixToarray(localAxisMatrix, tempArray);
 	glLoadMatrixf(tempArray);
 	drawAxis();  //local axis
-//	glPopMatrix();
-
 
 	//check error
 	GLenum glErr;
 	glErr = glGetError();
 	printf("%s\n",gluErrorString(glErr));
 	
+	distanceToOrigin.x += worldTranslation.x;
+	distanceToOrigin.y += worldTranslation.y;
+	distanceToOrigin.z += worldTranslation.z;
 	init();
 	// (Note that the origin is lower left corner)
 	// (Note also that the window spans (0,1) )
@@ -503,16 +492,22 @@ void keyboard(unsigned char key, int x, int y)
 		scale -= SCALE_INDEX;
 		break;
 	case 'i':
+		matrixLocalRotate(-ROTATION_INDEX_RADIAN, 'x', localRotation);
 		break;
 	case 'o':
+		matrixLocalRotate(ROTATION_INDEX_RADIAN, 'x', localRotation);
 		break;
 	case 'k':  
+		matrixLocalRotate(-ROTATION_INDEX_RADIAN, 'y', localRotation);
 		break;
 	case 'l':  
+		matrixLocalRotate(ROTATION_INDEX_RADIAN, 'y', localRotation);
 		break;
 	case 'm': 
+		matrixLocalRotate(-ROTATION_INDEX_RADIAN, 'z', localRotation);
 		break;
 	case ',': 
+		matrixLocalRotate(ROTATION_INDEX_RADIAN, 'z', localRotation);
 		break;
 	
 	
@@ -559,9 +554,12 @@ void matrixMultiply(Matrix4x4 m1, Matrix4x4 m2)
 
 /*  Procedure for generating 3D translation matrix.  */
 
-void matrixTranslate(float tx, float ty, float tz ,Matrix4x4 m)
+void matrixTranslate(point translation ,Matrix4x4 m)
 {
 	Matrix4x4 matTransl3D;
+	float tx = translation.x;
+	float ty = translation.y;
+	float tz = translation.z;
 
 	//  Initialize translation matrix to identity.  
 	setIdentity(matTransl3D);
@@ -572,6 +570,20 @@ void matrixTranslate(float tx, float ty, float tz ,Matrix4x4 m)
 
 	//  Concatenate matTransl3D with composite matrix.  
 	matrixMultiply(matTransl3D, m);
+}
+
+void matrixLocalRotate(float radian, char axis, Matrix4x4 m) {
+	matrixTranslate(distanceToOrigin, m);
+	matrixRotate(radian, axis, m);
+	matrixTranslate(reversePoint(distanceToOrigin), m);
+}
+
+point reversePoint(point p){
+	point temp;
+	temp.x = -p.x;
+	temp.y = -p.y;
+	temp.z = -p.z;
+	return temp;
 }
 
 /*  Procedure for generating a \ rotation matrix.  */
@@ -607,8 +619,7 @@ void matrixRotate(float radian, char axis, Matrix4x4 m) {
 	}
 }
 
-/*  Procedure for generating a 3D scaling matrix.  */
-
+/*
 void matrixScale(float sx, float sy, float sz, _point fixedPt, Matrix4x4 m)
 {
 	Matrix4x4 matScale3D;
@@ -626,7 +637,7 @@ void matrixScale(float sx, float sy, float sz, _point fixedPt, Matrix4x4 m)
 	//  Concatenate matScale3D with composite matrix.  
 	matrixMultiply(matScale3D, m);
 }
-
+*/
 //m1 assign to m2
 void MatrixAssignment(Matrix4x4 m1, Matrix4x4 m2) {
 	for (int i = 0; i < 4; ++i) {
@@ -714,6 +725,9 @@ int main(int argc, char* argv[])
 
 	setIdentity(modelMatrix);
 	setIdentity(localAxisMatrix);
+	distanceToOrigin.x = 0;
+	distanceToOrigin.y = 0;
+	distanceToOrigin.z = 0;
 	init();
 	glutMainLoop();
 	return 0;
