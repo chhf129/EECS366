@@ -11,12 +11,23 @@ int PERSPECTIVE = ON;
 int OBJECT_ON = ON;
 int AXIS_ON = ON;
 int degrees = 0;
-float theta = 1.570796;
-float phi = 0;
+float phi = 1.570796;
+float theta = 0;
 float rho = 10;
-float eyeX, eyeY, eyeZ;
+float centerX = 0;
+float centerY = 0;
+float centerZ = 0;
+
+float eyeX = -4;
+float eyeY = 0;
+float eyeZ = 0;
+
+float upX = 0;
+float upY = 0;
+float upZ = 1;
 int oldX, oldY;
-int rotate, zoom;
+int rotateHead, zoom, moveBody;
+float moveX, moveY;
 Matrix4x4 modelMatrix, viewMatrix, localRotation, worldRotation;
 point translation; //faking as a 3d vector
 
@@ -27,6 +38,10 @@ faceStruct *faceList;	    // Face List
 
 							// The mesh reader itself
 							// It can read *very* simple obj files
+typedef struct _Vector3f {
+	float x, y, z;
+} Vector3f;
+
 void meshReader(char *filename, int sign)
 {
 	float x, y, z, len;
@@ -155,10 +170,10 @@ void	display(void)
 		gluPerspective(60, (GLdouble)window_width / window_height, 0.01, 10000);
 		glutSetWindowTitle("Assignment 2 Template (perspective)");
 		// Set the camera position, orientation and target
-		eyeX = rho * cos(theta)*sin(phi);
+		/*eyeX = rho * cos(theta)*sin(phi);
 		eyeY = rho * sin(theta)*sin(phi);
 		eyeZ = rho * cos(phi);
-		gluLookAt(eyeX, eyeY, eyeZ, 0, 0, 0, 0, 1, 0);
+		gluLookAt(eyeX, eyeY, eyeZ, 0, 0, 0, 0, 1, 0);*/
 	}
 	else {
 		// Orthogonal Projection 
@@ -178,16 +193,43 @@ void	display(void)
 	arrayToMatrix(tempArray, tempMatrix);
 	
 	//matrix manipulation
-	matrixMultiply(tempMatrix, modelMatrix);
-	matrixMultiply(localRotation, modelMatrix); //maybe store result in m1?
-	matrixTranslate(translation.x, translation.y, translation.z, modelMatrix);
+	//matrixMultiply(tempMatrix, modelMatrix);
+	//matrixMultiply(localRotation, modelMatrix); //maybe store result in m1?
+	//matrixTranslate(translation.x, translation.y, translation.z, modelMatrix);
 	//model matrix rotation
 
 	//viewMatrix= viewTransform();
+	centerX = 1 * cos(theta)*sin(phi) + eyeX;
+	centerY = 1 * sin(theta)*sin(phi) + eyeY;
+	centerZ = 1 * cos(phi) + eyeZ;
+	printf("center x: %f, y: %f, z: %f\n", centerX, centerY, centerZ);
+	Vector3f f = { centerX - eyeX, centerY - eyeY, centerZ - eyeZ };
+	float f_mag = sqrt(f.x * f.x + f.y * f.y + f.z * f.z);
+	Vector3f f_n = { f.x / f_mag, f.y / f_mag, f.z / f_mag };
+	Vector3f s = { f_n.y * upZ - f_n.z * upY, f_n.z * upX - f_n.x * upZ, f_n.x * upY - f_n.y * upX };
+	float s_mag = sqrt(s.x * s.x + s.y * s.y + s.z * s.z);
+	Vector3f s_n = { s.x / s_mag, s.y / s_mag, s.z / s_mag };
+	Vector3f u = { s_n.y * f_n.z - s_n.z * f_n.y, s_n.z * f_n.x - s_n.x * f_n.z, s_n.x * f_n.y - s_n.y * f_n.x };
+	GLfloat M[16] = { s_n.x, u.x, -1 * f_n.x, 0,
+		s_n.y, u.y, -1 * f_n.y, 0,
+		s_n.z, u.z, -1 * f_n.z, 0,
+		0,   0,    0,         1 };
+	eyeX = eyeX + s_n.x * moveX;
+	eyeY = eyeY + s_n.y * moveX;
+	eyeZ = eyeZ + s_n.z * moveX;
 
+	eyeX = eyeX + u.x * moveY;
+	eyeY = eyeY + u.y * moveY;
+	eyeZ = eyeZ + u.z * moveY;
+	for (int i = 0; i < 16; i++) {
+		//printf("the item is: %f\n", M[i]);
+	}
+	glMultMatrixf(M);
+	glTranslatef(-eyeX, -eyeY, -eyeZ);
+	
 	//apply matrix
 //	matrixToarray(currentMatrix, tempArray);
-	glLoadMatrixf(tempArray);
+	//glLoadMatrixf(tempArray);
 
 
 	glMatrixMode(GL_MODELVIEW);
@@ -195,7 +237,6 @@ void	display(void)
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	drawObject();
 //	glPushMatrix();
-	glRotatef(degrees, 0.0, 0.0, 1);
 //	
 
 	
@@ -311,15 +352,23 @@ void	resize(int x, int y)
 //This function is called whenever the mouse is moved with a mouse button held down.
 // x and y are the location of the mouse (in window-relative coordinates)
 void OnMouseMove(int x, int y) {
-	if (rotate) {
+	if (rotateHead) {
+		moveX = 0;
+		moveY = 0;
+		theta += (x - oldX)*0.01f;
 		//prevent the camera from going upside down (limit how far up it can move)
-		if ((phi + (y - oldY) * 0.01f  > 1.570796 && y > oldY) || (phi + (y - oldY) * 0.01f < -1.570796 && y < oldY)) {
-			//do nothing
-		}
-		else {
-			phi += (y - oldY)*0.01f;
-		}
+		//if ((phi + (y - oldY) * 0.01f  > 1.570796 && y > oldY) || (phi + (y - oldY) * 0.01f < -1.570796 && y < oldY)) {
+		//do nothing
+		//}
+		//else {
+		phi += (y - oldY)*0.01f;
+		//}
 		degrees = degrees + x - oldX;
+		glutPostRedisplay();
+	}
+	else if (moveBody) {
+		moveX = (x - oldX) * .01f;
+		moveY = (y - oldY) * .01f;
 		glutPostRedisplay();
 	}
 	else if (zoom) {
@@ -333,15 +382,21 @@ void OnMouseMove(int x, int y) {
 
 //determine which mouse button is pressed
 void OnMouseDown(int button, int state, int x, int y) {
-	rotate = 0;
-	zoom = 1;
+	rotateHead = 0;
+	moveBody = 0;
+	zoom = 0;
 	if (button == GLUT_LEFT_BUTTON) {
 		oldX = x;
 		oldY = y;
-		rotate = 1;
+		rotateHead = 1;
+	}
+	else if (button == GLUT_MIDDLE_BUTTON) {
+		zoom = 1;
+		oldY = y;
 	}
 	else if (button == GLUT_RIGHT_BUTTON) {
-		zoom = 1;
+		moveBody = 1;
+		oldX = x;
 		oldY = y;
 	}
 }
@@ -480,25 +535,25 @@ void matrixTranslate(float tx, float ty, float tz ,Matrix4x4 m)
 
 /*  Procedure for generating a \ rotation matrix.  */
 
-void rotateMatrix(float degree, char axis, Matrix4x4 m) {
-	float radian = degree * (3.1415926 / 180.0);
-	float matrixX[4][4] =
-	
-	
-	
-	{ 1, 0, 0, 0,   0, cos(radian), sin(radian),0,     0, -1.0 * sin(radian), cos(radian), 0,  0,0,0,1 };
-	float matrixY[4][4] = { cos(radian), 0, -1.0 * sin(radian),0,     0, 1, 0,0,    sin(radian), 0, cos(radian),0   ,0,0,0,1 };
-	float matrixZ[4][4] = { cos(radian), sin(radian), 0,0,   -1.0 * sin(radian), cos(radian),0,0,  0, 0, 1,0,  0,0,0,1};
-
-	switch (axis) {
-	case 'x':
-		matrixMultiply(matrixX, m);
-	case 'y':
-	case 'z':
-	default:
-		
-	}
-}
+//void rotateMatrix(float degree, char axis, Matrix4x4 m) {
+//	float radian = degree * (3.1415926 / 180.0);
+//	float matrixX[4][4] =
+//	
+//	
+//	
+//	{ 1, 0, 0, 0,   0, cos(radian), sin(radian),0,     0, -1.0 * sin(radian), cos(radian), 0,  0,0,0,1 };
+//	float matrixY[4][4] = { cos(radian), 0, -1.0 * sin(radian),0,     0, 1, 0,0,    sin(radian), 0, cos(radian),0   ,0,0,0,1 };
+//	float matrixZ[4][4] = { cos(radian), sin(radian), 0,0,   -1.0 * sin(radian), cos(radian),0,0,  0, 0, 1,0,  0,0,0,1};
+//
+//	switch (axis) {
+//	case 'x':
+//		matrixMultiply(matrixX, m);
+//	case 'y':
+//	case 'z':
+//	default:
+//		
+//	}
+//}
 
 /*  Procedure for generating a 3D scaling matrix.  */
 
