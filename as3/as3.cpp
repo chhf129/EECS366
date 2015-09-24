@@ -31,8 +31,8 @@ int oldX, oldY;
 int rotateHead, zoom, moveBody;
 float moveX, moveY;
 float scale = 1;
-Matrix4x4 modelMatrix, viewMatrix, localRotation, worldRotation;
-point worldTranslation, localTranslation; //faking as a 3d vector
+Matrix4x4 modelMatrix, localAxisMatrix, localRotation, worldRotation;
+point worldTranslation; //faking as a 3d vector
 
 
 int verts, faces, norms;    // Number of vertices, faces and normals in the system
@@ -239,10 +239,9 @@ void	display(void)
 	matrixMultiply(worldRotation, modelMatrix);
 	
 	matrixTranslate(worldTranslation.x, worldTranslation.y, worldTranslation.z, modelMatrix);
-	
-	matrixMultiply(localRotation, modelMatrix); //maybe store result in m1?
-	matrixTranslate(localTranslation.x, localTranslation.y, localTranslation.z, modelMatrix);
-	
+	matrixTranslate(worldTranslation.x, worldTranslation.y, worldTranslation.z, localAxisMatrix);
+
+	matrixMultiply(localRotation, modelMatrix); 
 	//apply matrix
 	matrixToarray(modelMatrix, tempArray);
 //	
@@ -268,8 +267,11 @@ void	display(void)
 //	
 
 	glLoadIdentity();
-	drawAxis();
+	drawAxis();    //global axis
 	
+	matrixToarray(localAxisMatrix, tempArray);
+	glLoadMatrixf(tempArray);
+	drawAxis();  //local axis
 //	glPopMatrix();
 
 
@@ -687,9 +689,6 @@ void init() {
 	worldTranslation.x = 0;
 	worldTranslation.y = 0;
 	worldTranslation.z = 0;
-	localTranslation.x = 0;
-	localTranslation.y = 0;
-	localTranslation.z = 0;
 	
 }
 
@@ -714,6 +713,7 @@ int main(int argc, char* argv[])
 	meshReader("teapot.obj", 1);
 
 	setIdentity(modelMatrix);
+	setIdentity(localAxisMatrix);
 	init();
 	glutMainLoop();
 	return 0;
