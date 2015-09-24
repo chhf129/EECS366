@@ -29,7 +29,7 @@ float upY = 0;
 float upZ = 1;
 int oldX, oldY;
 int rotateHead, zoom, moveBody;
-float moveX, moveY;
+float moveX, moveY, zoomVal;
 float scale = 1;
 Matrix4x4 modelMatrix, localAxisMatrix, localRotation, worldRotation;
 point worldTranslation, distanceToOrigin; //faking as a 3d vector
@@ -225,6 +225,19 @@ void	display(void)
 	eyeX = eyeX + u.x * moveY;
 	eyeY = eyeY + u.y * moveY;
 	eyeZ = eyeZ + u.z * moveY;
+
+	centerX = centerX + s_n.x * moveX;
+	centerY = centerY + s_n.y * moveX;
+	centerZ = centerZ + s_n.z * moveX;
+
+	centerX = centerX + u.x * moveY;
+	centerY = centerY + u.y * moveY;
+	centerZ = centerZ + u.z * moveY;
+	
+	eyeX = eyeX + f_n.x * zoomVal;
+	eyeY = eyeY + f_n.y * zoomVal;
+	eyeZ = eyeZ + f_n.z * zoomVal;
+
 	for (int i = 0; i < 16; i++) {
 		//printf("the item is: %f\n", M[i]);
 	}
@@ -394,7 +407,9 @@ void OnMouseMove(int x, int y) {
 		glutPostRedisplay();
 	}
 	else if (zoom) {
-		rho += (y - oldY) * 0.01f;
+		moveX = 0;
+		moveY = 0;
+		zoomVal = (y - oldY) * 0.01f;
 		glutPostRedisplay();
 	}
 	oldX = x;
@@ -406,17 +421,18 @@ void OnMouseMove(int x, int y) {
 void OnMouseDown(int button, int state, int x, int y) {
 	rotateHead = 0;
 	moveBody = 0;
+	zoomVal = 0;
 	zoom = 0;
 	if (button == GLUT_LEFT_BUTTON) {
 		oldX = x;
 		oldY = y;
 		rotateHead = 1;
 	}
-	else if (button == GLUT_MIDDLE_BUTTON) {
+	else if (button == GLUT_RIGHT_BUTTON) {
 		zoom = 1;
 		oldY = y;
 	}
-	else if (button == GLUT_RIGHT_BUTTON) {
+	else if (button == GLUT_MIDDLE_BUTTON) {
 		moveBody = 1;
 		oldX = x;
 		oldY = y;
