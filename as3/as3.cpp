@@ -234,9 +234,14 @@ void	display(void)
 	for (int i = 0; i < 16; i++) {
 		//printf("the item is: %f\n", M[i]);
 	}
-
+	GLfloat T[16] = { 1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		-eyeX, -eyeY, -eyeZ,  1 };
+	
 	glMultMatrixf(M);
-	glTranslatef(-eyeX, -eyeY, -eyeZ);
+	glMultMatrixf(T);
+	
 
 
 	GLfloat tempArray[16];

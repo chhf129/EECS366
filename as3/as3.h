@@ -29,6 +29,7 @@ void draw_red_rectangle();
 void	resize(int x, int y);
 void OnMouseMove(int x, int y);
 void OnMouseDown(int button, int state, int x, int y);
+void updateDistanceToOrigin();
 void keyboard(unsigned char key, int x, int y);
 void setIdentity(Matrix4x4 m);
 void matrixMultiply(Matrix4x4 m1, Matrix4x4 m2);
