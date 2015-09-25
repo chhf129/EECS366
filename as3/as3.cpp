@@ -268,12 +268,14 @@ void	display(void)
 	drawAxis();    //global axis
 
 	//update and reinitiate 
+	/*
 	distanceToOrigin.x += worldTranslation.x;
 	distanceToOrigin.y += worldTranslation.y;
 	distanceToOrigin.z += worldTranslation.z;
 	printf("x %f y %f z %f", distanceToOrigin.x, distanceToOrigin.y, distanceToOrigin.z);
 	printMatrix(modelMatrix);
-	//matrixMultiply(worldRotation, distanceToOrigin);
+	matrixMultiply(worldRotation, distanceToOrigin);
+	*/
 	init();
 	// (Note that the origin is lower left corner)
 	// (Note also that the window spans (0,1) )
@@ -529,6 +531,7 @@ void keyboard(unsigned char key, int x, int y)
 			centerZ = 0;
 		}
 		else {
+			updateDistanceToOrigin();
 			centerX = distanceToOrigin.x;
 			centerY = distanceToOrigin.y;
 			centerZ = distanceToOrigin.z;
@@ -605,11 +608,18 @@ void matrixTranslate(point translation ,Matrix4x4 m)
 }
 
 void matrixLocalRotate(Matrix4x4 localRotation, Matrix4x4 modelMatrix) {
+	updateDistanceToOrigin();
 	matrixTranslate(reversePoint(distanceToOrigin), modelMatrix);
 //	printMatrix(modelMatrix);
 	matrixMultiply(localRotation, modelMatrix);
 	matrixTranslate(distanceToOrigin, modelMatrix);
 	
+}
+
+void updateDistanceToOrigin() {
+	distanceToOrigin.x = modelMatrix[0][3];
+	distanceToOrigin.y = modelMatrix[1][3];
+	distanceToOrigin.z = modelMatrix[2][3];
 }
 
 point reversePoint(point p){
