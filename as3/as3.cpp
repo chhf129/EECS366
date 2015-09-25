@@ -3,7 +3,7 @@
 
 #include "as3.h"
 #define TRANSLATE_INDEX 0.5
-#define ROTATION_INDEX_RADIAN 0.35
+#define ROTATION_INDEX_RADIAN 0.05
 #define SCALE_INDEX 0.1
 
 
@@ -33,7 +33,7 @@ int toggleCamera = 0;
 int snapCamera = 0;
 float moveX, moveY, zoomVal;
 float scale = 1;
-Matrix4x4 modelMatrix, localAxisMatrix, localRotation, worldRotation;
+Matrix4x4 modelMatrix, localRotation, worldRotation;
 point worldTranslation, distanceToOrigin; //faking as a 3d vector
 
 
@@ -189,20 +189,6 @@ void	display(void)
 		glOrtho(-0.25*rho, 0.25*rho, -0.25*rho, 0.25*rho, -10000, 10000);
 		glutSetWindowTitle("Assignment 2 Template (orthogonal)");
 	}
-	
-	/*
-	   glMaxtrix(modelview)
-	   glLoadMatrixf(ViewTransform);
-
-	   glMaxtrix(modelview)
-	   glLoadMatrixf(modellingTransform);
-	   drawObject
-	*/
-
-
-
-	
-
 
 	//viewMatrix= viewTransform();
 	if (!snapCamera) {
@@ -210,6 +196,7 @@ void	display(void)
 		centerY = 1 * sin(theta)*sin(phi) + eyeY;
 		centerZ = 1 * cos(phi) + eyeZ;
 	}
+
 	printf("center x: %f, y: %f, z: %f\n", centerX, centerY, centerZ);
 	Vector3f f = { centerX - eyeX, centerY - eyeY, centerZ - eyeZ };
 	float f_mag = sqrt(f.x * f.x + f.y * f.y + f.z * f.z);
@@ -250,18 +237,17 @@ void	display(void)
 
 	glMultMatrixf(M);
 	glTranslatef(-eyeX, -eyeY, -eyeZ);
-	
 
 
 	GLfloat tempArray[16];
 	glMatrixMode(GL_MODELVIEW);
 	//printMatrix(modelMatrix);
+	matrixMultiply(localRotation, modelMatrix);
 	matrixMultiply(worldRotation, modelMatrix);
 	
 	matrixTranslate(worldTranslation, modelMatrix);
-	matrixTranslate(worldTranslation, localAxisMatrix);
 
-	matrixMultiply(localRotation, modelMatrix); 
+	
 	matrixToarray(modelMatrix, tempArray);
 	
 
@@ -273,19 +259,12 @@ void	display(void)
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	drawObject();
-
+	drawAxis();  //local axis
+	
 	glLoadIdentity();
 	drawAxis();    //global axis
 
-	matrixToarray(localAxisMatrix, tempArray);
-	glLoadMatrixf(tempArray);
-	drawAxis();  //local axis
-
-	//check error
-	GLenum glErr;
-	glErr = glGetError();
-	printf("%s\n",gluErrorString(glErr));
-	
+	//update and reinitiate 
 	distanceToOrigin.x += worldTranslation.x;
 	distanceToOrigin.y += worldTranslation.y;
 	distanceToOrigin.z += worldTranslation.z;
@@ -401,7 +380,7 @@ void OnMouseMove(int x, int y) {
 		//prevent the camera from going upside down (limit how far up it can move)
 		//if ((phi + (y - oldY) * 0.01f  > 1.570796 && y > oldY) || (phi + (y - oldY) * 0.01f < -1.570796 && y < oldY)) {
 		//do nothing
-		//}
+		//}f
 		//else {
 		phi += (y - oldY)*0.01f;
 		//}
@@ -562,10 +541,6 @@ void keyboard(unsigned char key, int x, int y)
 }
 
 
-
-
-// These geometric functions are modified from chapter9-4
-
 /* Construct the 4 x 4 identity matrix. */
 void setIdentity(Matrix4x4 m)
 {
@@ -614,9 +589,9 @@ void matrixTranslate(point translation ,Matrix4x4 m)
 }
 
 void matrixLocalRotate(float radian, char axis, Matrix4x4 m) {
-	matrixTranslate(distanceToOrigin, m);
-	matrixRotate(radian, axis, m);
 	matrixTranslate(reversePoint(distanceToOrigin), m);
+	matrixRotate(radian, axis, m);
+	matrixTranslate(distanceToOrigin, m);
 }
 
 point reversePoint(point p){
@@ -627,10 +602,9 @@ point reversePoint(point p){
 	return temp;
 }
 
-/*  Procedure for generating a \ rotation matrix.  */
+/*  Procedure for generating a rotation matrix.  */
 
 void matrixRotate(float radian, char axis, Matrix4x4 m) {
-//	float radian = degree * (3.1415926 / 180.0);
 	float matrixX[4][4] = { 
 						  {1,0,0,0},
 						  {0,cos(radian),-1.0f * sin(radian),0},
@@ -660,26 +634,10 @@ void matrixRotate(float radian, char axis, Matrix4x4 m) {
 	}
 }
 
+
 /*
-void matrixScale(float sx, float sy, float sz, _point fixedPt, Matrix4x4 m)
-{
-	Matrix4x4 matScale3D;
-
-	// Initialize scaling matrix to identity.  
-	setIdentity(matScale3D);
-
-	matScale3D[0][0] = sx;
-	matScale3D[0][3] = (1 - sx) * fixedPt.x;
-	matScale3D[1][1] = sy;
-	matScale3D[1][3] = (1 - sy) * fixedPt.y;
-	matScale3D[2][2] = sz;
-	matScale3D[2][3] = (1 - sz) * fixedPt.z;
-
-	//  Concatenate matScale3D with composite matrix.  
-	matrixMultiply(matScale3D, m);
-}
+	m1 assign to m2
 */
-//m1 assign to m2
 void MatrixAssignment(Matrix4x4 m1, Matrix4x4 m2) {
 	for (int i = 0; i < 4; ++i) {
 		for (int j = 0; j < 4; ++j) {
@@ -688,7 +646,9 @@ void MatrixAssignment(Matrix4x4 m1, Matrix4x4 m2) {
 	}
 }
 
-/* matrix to array in column major order*/
+/*
+   element in matrix transfter to column major array
+*/
 void matrixToarray(Matrix4x4 m, float array[]) {
 	for (int i = 0; i < 4; ++i) {
 		for (int j = 0; j < 4; ++j) {
@@ -697,6 +657,9 @@ void matrixToarray(Matrix4x4 m, float array[]) {
 	}
 }
 
+/*
+   element in column major array transfter to matrix m
+*/
 void arrayToMatrix(GLfloat* array, Matrix4x4 m) {
 	for (int i = 0; i < 4; ++i) {
 		for (int j = 0; j < 4; ++j) {
@@ -721,20 +684,6 @@ void printArray(float* a) {
 	printf("\n");
 }
 
-/*
-void viewTransform(point p, point n, point v, Matrix4x4 m) {
-
-	float nMagnitue = sqrt(pow(n.x, 2) + pow(n.y, 2) + pow(n.z, 2));
-	n.x = n.x / nMagnitue;
-
-
-		m[0][1] = u.x;
-		m[]
-
-	return m;
-}
-*/
-
 void init() {
 	setIdentity(worldRotation);
 	setIdentity(localRotation);
@@ -744,6 +693,12 @@ void init() {
 	
 }
 
+
+void errorCheck() {
+	GLenum glErr;
+	glErr = glGetError();
+	printf("%s\n", gluErrorString(glErr));
+}
 
 int main(int argc, char* argv[])
 {
@@ -755,17 +710,17 @@ int main(int argc, char* argv[])
 	glutMouseFunc(OnMouseDown);
 	glutMotionFunc(OnMouseMove);
 	glutKeyboardFunc(keyboard);
-
+	/*
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	glOrtho(-2.5, 2.5, -2.5, 2.5, -10000, 10000);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	glEnable(GL_DEPTH_TEST);
+	*/
 	meshReader("teapot.obj", 1);
 
 	setIdentity(modelMatrix);
-	setIdentity(localAxisMatrix);
 	distanceToOrigin.x = 0;
 	distanceToOrigin.y = 0;
 	distanceToOrigin.z = 0;
