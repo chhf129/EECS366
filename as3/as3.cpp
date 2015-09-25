@@ -241,6 +241,7 @@ void	display(void)
 	for (int i = 0; i < 16; i++) {
 		//printf("the item is: %f\n", M[i]);
 	}
+
 	glMultMatrixf(M);
 	glTranslatef(-eyeX, -eyeY, -eyeZ);
 	
@@ -528,6 +529,16 @@ void keyboard(unsigned char key, int x, int y)
 		break;
 	case 'm': 
 		break;
+	case 'c':
+		if (toggleCamera) {
+			centerX = 0;
+			centerY = 0;
+			centerZ = 0;
+		}
+		else {
+			distanceToOrigin(x, y, z)
+		}
+		
 	case ',': 
 		break;
 	
