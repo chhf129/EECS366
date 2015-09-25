@@ -658,10 +658,13 @@ void matrixRotate(float radian, char axis, Matrix4x4 m) {
 	switch (axis) {
 	case 'x':
 		matrixMultiply(matrixX, m);
+		break;
 	case 'y':
 		matrixMultiply(matrixY, m);
+		break;
 	case 'z':
 		matrixMultiply(matrixZ, m);
+		break;
 	default:
 		printf("asfdsad");
 	}
