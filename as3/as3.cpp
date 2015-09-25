@@ -242,11 +242,14 @@ void	display(void)
 	GLfloat tempArray[16];
 	glMatrixMode(GL_MODELVIEW);
 	//printMatrix(modelMatrix);
-	matrixMultiply(localRotation, modelMatrix);
+	
 	matrixMultiply(worldRotation, modelMatrix);
 	
 	matrixTranslate(worldTranslation, modelMatrix);
 
+	matrixLocalRotate(localRotation, modelMatrix);
+
+	//matrixMultiply(localRotation, modelMatrix);
 	
 	matrixToarray(modelMatrix, tempArray);
 	
@@ -255,7 +258,7 @@ void	display(void)
 //	glGetFloatv(GL_MODELVIEW_MATRIX, tempArray);
 //	arrayToMatrix(tempArray, tempMatrix);
 	glLoadMatrixf(tempArray);
-	printMatrix(modelMatrix);
+	//printMatrix(modelMatrix);
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	drawObject();
@@ -268,6 +271,9 @@ void	display(void)
 	distanceToOrigin.x += worldTranslation.x;
 	distanceToOrigin.y += worldTranslation.y;
 	distanceToOrigin.z += worldTranslation.z;
+	printf("x %f y %f z %f", distanceToOrigin.x, distanceToOrigin.y, distanceToOrigin.z);
+	printMatrix(modelMatrix);
+	//matrixMultiply(worldRotation, distanceToOrigin);
 	init();
 	// (Note that the origin is lower left corner)
 	// (Note also that the window spans (0,1) )
@@ -497,19 +503,22 @@ void keyboard(unsigned char key, int x, int y)
 		scale -= SCALE_INDEX;
 		break;
 	case 'i':
-		matrixLocalRotate(-ROTATION_INDEX_RADIAN, 'x', localRotation);
+		matrixRotate(-ROTATION_INDEX_RADIAN, 'x', localRotation);
 		break;
 	case 'o':
-		matrixLocalRotate(ROTATION_INDEX_RADIAN, 'x', localRotation);
+		matrixRotate(ROTATION_INDEX_RADIAN, 'x', localRotation);
 		break;
 	case 'k':  
-		matrixLocalRotate(-ROTATION_INDEX_RADIAN, 'y', localRotation);
+		matrixRotate(-ROTATION_INDEX_RADIAN, 'y', localRotation);
 		break;
 	case 'l':  
-		matrixLocalRotate(ROTATION_INDEX_RADIAN, 'y', localRotation);
+		matrixRotate(ROTATION_INDEX_RADIAN, 'y', localRotation);
 		break;
 	case 'm': 
-		matrixLocalRotate(-ROTATION_INDEX_RADIAN, 'z', localRotation);
+		matrixRotate(-ROTATION_INDEX_RADIAN, 'z', localRotation);
+		break;
+	case ',':
+		matrixRotate(ROTATION_INDEX_RADIAN, 'z', localRotation);
 		break;
 	case 'c':
 		toggleCamera = !toggleCamera;
@@ -525,9 +534,6 @@ void keyboard(unsigned char key, int x, int y)
 			centerZ = distanceToOrigin.z;
 		}
 		glutPostRedisplay();
-		break;
-	case ',': 
-		matrixLocalRotate(ROTATION_INDEX_RADIAN, 'z', localRotation);
 		break;
 	
 	
@@ -568,6 +574,16 @@ void matrixMultiply(Matrix4x4 m1, Matrix4x4 m2)
 			m2[row][col] = matTemp[row][col];
 }
 
+/*
+	matrix multiply to a vector, store result in p
+*/
+void matrixMultiply(Matrix4x4 m, point p) {
+	p.x = m[0][0] * p.x + m[0][1] * p.y + m[0][2] * p.z + m[0][3];
+	p.y = m[1][0] * p.x + m[1][1] * p.y + m[1][2] * p.z + m[1][3];
+	p.z = m[2][0] * p.x + m[2][1] * p.y + m[2][2] * p.z + m[2][3];
+}
+
+
 /*  Procedure for generating 3D translation matrix.  */
 
 void matrixTranslate(point translation ,Matrix4x4 m)
@@ -588,10 +604,12 @@ void matrixTranslate(point translation ,Matrix4x4 m)
 	matrixMultiply(matTransl3D, m);
 }
 
-void matrixLocalRotate(float radian, char axis, Matrix4x4 m) {
-	matrixTranslate(reversePoint(distanceToOrigin), m);
-	matrixRotate(radian, axis, m);
-	matrixTranslate(distanceToOrigin, m);
+void matrixLocalRotate(Matrix4x4 localRotation, Matrix4x4 modelMatrix) {
+	matrixTranslate(reversePoint(distanceToOrigin), modelMatrix);
+//	printMatrix(modelMatrix);
+	matrixMultiply(localRotation, modelMatrix);
+	matrixTranslate(distanceToOrigin, modelMatrix);
+	
 }
 
 point reversePoint(point p){
@@ -714,10 +732,10 @@ int main(int argc, char* argv[])
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	glOrtho(-2.5, 2.5, -2.5, 2.5, -10000, 10000);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
 	glEnable(GL_DEPTH_TEST);
 	*/
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
 	meshReader("teapot.obj", 1);
 
 	setIdentity(modelMatrix);
